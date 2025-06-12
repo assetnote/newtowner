@@ -10,6 +10,7 @@ import (
 	"newtowner/internal/display"
 	"newtowner/internal/providers/aws"
 	"newtowner/internal/providers/bitbucket"
+	"newtowner/internal/providers/cloudflare"
 	"newtowner/internal/providers/github"
 	gitlab "newtowner/internal/providers/gitlab"
 	"newtowner/internal/providers/ssh"
@@ -57,7 +58,7 @@ var (
 // init is run before main to set up configuration and flags.
 func init() {
 	// Define CLI flags using pflag
-	providerFlag = pflag.String("provider", "", "Name of the provider (e.g., aws, github, gitlab, bitbucket, brightdata, ssh, ec2)")
+	providerFlag = pflag.String("provider", "", "Name of the provider (e.g., aws, github, gitlab, bitbucket, cloudflare, ssh, ec2)")
 	urlsFilePathFlag = pflag.String("urls", "urls.txt", "Path to the file containing URLs to check (one URL per line)")
 	awsRegionFlag = pflag.String("region", "", "Optional: Specify AWS region (e.g., us-east-1). Overridden by --all-regions.")
 	updateDBFlag = pflag.Bool("update-db", false, "Force update of the GeoLite2-City.mmdb database")
@@ -232,6 +233,9 @@ func main() {
 	log.Printf("  Bitbucket Pipeline Ref: %s", cfg.BitbucketPipelineRef)
 	log.Printf("  AWS Access Key ID present: %t", cfg.AWSAccessKeyID != "")
 	log.Printf("  AWS Secret Access Key present: %t", cfg.AWSSecretAccessKey != "")
+	log.Printf("  Cloudflare Account ID: %s", cfg.CloudflareAccountID)
+	log.Printf("  Cloudflare API Token present: %t", cfg.CloudflareAPIToken != "")
+	log.Printf("  Cloudflare Worker URL: %s", cfg.CloudflareWorkerURL)
 	log.Printf("  SSH Host: %s", cfg.SshHost)
 	log.Printf("  SSH Port: %d", cfg.SshPort)
 	log.Printf("  SSH User: %s", cfg.SshUser)
@@ -436,6 +440,26 @@ func main() {
 		fmt.Println(display.DefaultDisplayStyles.StyleHeader.Render(fmt.Sprintf("\nEC2 Dual SSH Provider Check Results (%d URLs processed):", len(ec2Results))))
 
 		for i, res := range ec2Results {
+			display.DisplaySingleURLCheckResult(i, res, display.DefaultDisplayStyles)
+		}
+
+	case "cloudflare":
+		log.Println("Initializing Cloudflare provider...")
+		cloudflareProvider, err := cloudflare.NewProvider(ctx, cfg.CloudflareAccountID, cfg.CloudflareAPIToken, cfg.CloudflareWorkerURL)
+		if err != nil {
+			log.Fatalf("Error initializing Cloudflare provider: %v", err)
+		}
+		log.Println("Cloudflare provider initialized successfully.")
+
+		cloudflareResults, err := cloudflareProvider.CheckURLs(targetURLs)
+		if err != nil {
+			log.Fatalf("Error during Cloudflare provider URL checks: %v", err)
+		}
+		log.Println("Cloudflare provider checks completed.")
+
+		fmt.Println(display.DefaultDisplayStyles.StyleHeader.Render(fmt.Sprintf("\nCloudflare Provider Check Results (%d URLs processed):", len(cloudflareResults))))
+
+		for i, res := range cloudflareResults {
 			display.DisplaySingleURLCheckResult(i, res, display.DefaultDisplayStyles)
 		}
 

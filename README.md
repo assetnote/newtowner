@@ -18,6 +18,7 @@ Common misconfigurations of trust boundaries can be tested with this tool.
     - [Bitbucket Pipelines](#bitbucket-pipelines)
     - [AWS API Gateway](#aws-api-gateway)
     - [AWS EC2](#aws-ec2)
+    - [Cloudflare Workers](#cloudflare-workers)
 
 # Checks
 
@@ -25,14 +26,15 @@ This tool currently checks access differences for URLs (HTTP/HTTPS). It does not
 
 The following checks will be supported:
 
-| Provider Name       | Identifier  | Status            |
-| ------------------- | ----------- | ----------------- |
-| GitHub Actions      | `github`    | Supported         |
-| GitLab CI           | `gitlab`    | Supported         |
-| Bitbucket Pipelines | `bitbucket` | Supported         |
-| AWS API Gateway     | `aws`       | Supported         |
-| SSH/AWS EC2             | `ec2`       | Supported         |
-| Azure Functions   | `azure`     | Not yet supported |
+| Provider Name       | Identifier    | Status            |
+| ------------------- | ------------- | ----------------- |
+| GitHub Actions      | `github`      | Supported         |
+| GitLab CI           | `gitlab`      | Supported         |
+| Bitbucket Pipelines | `bitbucket`   | Supported         |
+| AWS API Gateway     | `aws`         | Supported         |
+| SSH/AWS EC2         | `ec2`         | Supported         |
+| Cloudflare Workers  | `cloudflare`  | Supported         |
+| Azure Functions     | `azure`       | Not yet supported |
 
 # Usage
 
@@ -75,6 +77,11 @@ Modify `configuration.json` in the root of this directory. Here's a complete exa
   // AWS API Gateway Provider
   "aws_access_key_id": "YOUR_AWS_ACCESS_KEY",
   "aws_secret_access_key": "YOUR_AWS_SECRET_KEY",
+
+  // Cloudflare Workers Provider
+  "cloudflare_account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
+  "cloudflare_api_token": "YOUR_CLOUDFLARE_API_TOKEN",
+  "cloudflare_worker_url": "https://your-worker.your-subdomain.workers.dev",
 
   // AWS EC2 Provider
   "ssh_host": "your-ssh-host",
@@ -245,6 +252,46 @@ The tool will:
 3. Compare the responses to identify potential trust boundary bypasses
 4. Auto-detect and display geographic information for both hosts
 5. Clean up temporary files after each check
+
+### Cloudflare Workers
+
+To use Newtowner with Cloudflare Workers:
+
+1. **Create API Token:**
+   - Go to **Cloudflare Dashboard > My Profile > API Tokens**
+   - Click **Create Token**
+   - Use **Custom token** template
+   - Set permissions: `Account:read` and `Workers Scripts:edit`
+   - Save the token securely
+
+2. **Deploy Worker:**
+   ```bash
+   # Install Wrangler (Cloudflare CLI)
+   npm install -g wrangler
+
+   # Login to Cloudflare
+   wrangler login
+
+   # Deploy the worker
+   cd .cloudflare
+   wrangler deploy --compatibility-date 2024-01-01
+   ```
+
+3. **Configure `configuration.json`:**
+   ```json
+   {
+     "cloudflare_account_id": "your-account-id-here",
+     "cloudflare_api_token": "your-api-token-here",
+     "cloudflare_worker_url": "https://newtowner-worker.your-subdomain.workers.dev"
+   }
+   ```
+
+4. **Run Newtowner:**
+   ```bash
+   ./newtowner --provider cloudflare --urls urls.txt
+   ```
+
+**Note:** If you leave `cloudflare_worker_url` empty, Newtowner will automatically deploy the worker for you.
 
 #### Credits
 

@@ -5,5 +5,8 @@
     "bitbucket_app_password":"KEYHERE",
     "brightdata_api_key":"KEYHERE",
     "aws_access_key_id":"KEYHERE",
-    "aws_secret_access_key":"KEYHERE"
+    "aws_secret_access_key":"KEYHERE",
+    "cloudflare_account_id":"KEYHERE",
+    "cloudflare_api_token":"KEYHERE",
+    "cloudflare_worker_url":"KEYHERE"
 }

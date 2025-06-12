@@ -1,0 +1,17 @@
+name = "newtowner-worker"
+main = "newtowner_worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Account ID will be set via environment variable or CLI
+# account_id = "your-account-id-here"
+
+[env.production]
+name = "newtowner-worker"
+
+[env.staging]
+name = "newtowner-worker-staging"
+
+# Variables that can be set via wrangler secret
+# [vars]
+# ALLOWED_ORIGINS = "*"
