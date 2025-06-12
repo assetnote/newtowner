@@ -9,20 +9,20 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.7
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.30.1
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.217.0
+	github.com/bramvdbogaerde/go-scp v1.5.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
+	gitlab.com/gitlab-org/api/client-go v0.128.0
+	golang.org/x/crypto v0.38.0
+	golang.org/x/term v0.32.0
 )
 
 require (
-	github.com/bramvdbogaerde/go-scp v1.5.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
-	gitlab.com/gitlab-org/api/client-go v0.128.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 )
 
