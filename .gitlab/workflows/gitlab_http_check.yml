@@ -8,6 +8,7 @@ http_check_job:
     DEFAULT_OUTPUT_FILE: "result.json"
   before_script:
     - pip install requests
+    - pip install cryptography
   script:
     - python scripts/http_check_runner.py "$TARGET_URLS" --output_file "$DEFAULT_OUTPUT_FILE"
     - echo "Python script finished. Results should be in $DEFAULT_OUTPUT_FILE"
