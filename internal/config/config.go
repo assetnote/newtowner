@@ -26,6 +26,11 @@ type Config struct {
 	AWSAccessKeyID     string `mapstructure:"aws_access_key_id"`
 	AWSSecretAccessKey string `mapstructure:"aws_secret_access_key"`
 
+	// Cloudflare Workers Provider Settings
+	CloudflareAccountID string `mapstructure:"cloudflare_account_id"`
+	CloudflareAPIToken  string `mapstructure:"cloudflare_api_token"`
+	CloudflareWorkerURL string `mapstructure:"cloudflare_worker_url"` // Optional: custom worker URL
+
 	// EC2 Provider Configuration (primary instance for EC2 provider)
 	SshHost           string `mapstructure:"ssh_host"`
 	SshPort           int    `mapstructure:"ssh_port"`
