@@ -94,17 +94,18 @@ func (r URLCheckResult) ShouldSkipBodyDiff() bool {
 
 // Provider struct holds SSH configuration.
 type Provider struct {
-	sshHost                string
-	sshPort                int
-	sshUser                string
-	sshPrivateKeyPath      string
-	remotePythonRunnerPath string
-	sshClient              *ssh.Client
-	sshPassphrase          string
+	sshHost                  string
+	sshPort                  int
+	sshUser                  string
+	sshPrivateKeyPath        string
+	remotePythonRunnerPath   string
+	sshClient                *ssh.Client
+	sshPassphrase            string
+	allowLegacyRenegotiation bool
 }
 
 // NewProvider creates a new SSH Comparison provider instance.
-func NewProvider(ctx context.Context, host string, port int, user string, keyPath string, passphrase string) (*Provider, error) {
+func NewProvider(ctx context.Context, host string, port int, user string, keyPath string, passphrase string, allowLegacyRenegotiation bool) (*Provider, error) {
 	if host == "" {
 		return nil, fmt.Errorf("SSH host must be provided")
 	}
@@ -113,9 +114,10 @@ func NewProvider(ctx context.Context, host string, port int, user string, keyPat
 	}
 
 	p := &Provider{
-		sshHost: host,
-		sshPort: port,
-		sshUser: user,
+		sshHost:                  host,
+		sshPort:                  port,
+		sshUser:                  user,
+		allowLegacyRenegotiation: allowLegacyRenegotiation,
 	}
 
 	if p.sshPort <= 0 {
@@ -333,6 +335,9 @@ func (p *Provider) executeRemoteSshCheck(ctx context.Context, targetURL string) 
 
 	quotedTargetURL := strconv.Quote(targetURL)
 	remoteCommand := fmt.Sprintf("python3 %s %s --output_file %s", p.remotePythonRunnerPath, quotedTargetURL, remoteTempJSONPath)
+	if p.allowLegacyRenegotiation {
+		remoteCommand += " --legacy-renegotiation"
+	}
 	log.Printf("[SSH Provider]   Executing remote command: %s", remoteCommand)
 
 	session, err := sshClient.NewSession()

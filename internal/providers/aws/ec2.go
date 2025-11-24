@@ -42,6 +42,8 @@ type EC2ProviderConfig struct {
 	SshUser       string
 	SshKeyPath    string
 	SshPassphrase string
+
+	AllowLegacyRenegotiation bool
 }
 
 type EC2URLCheckResult struct {
@@ -144,6 +146,7 @@ type EC2Provider struct {
 	sshRemotePythonRunnerPath string
 	sshGeoLocation            string
 	comparisonRegion          string
+	allowLegacyRenegotiation  bool
 }
 
 // NewEC2Provider creates a new EC2 dual SSH provider instance.
@@ -162,12 +165,13 @@ func NewEC2Provider(ctx context.Context, config EC2ProviderConfig) (*EC2Provider
 	}
 
 	p := &EC2Provider{
-		ec2Host: config.EC2Host,
-		ec2Port: config.EC2Port,
-		ec2User: config.EC2User,
-		sshHost: config.SshHost,
-		sshPort: config.SshPort,
-		sshUser: config.SshUser,
+		ec2Host:                  config.EC2Host,
+		ec2Port:                  config.EC2Port,
+		ec2User:                  config.EC2User,
+		sshHost:                  config.SshHost,
+		sshPort:                  config.SshPort,
+		sshUser:                  config.SshUser,
+		allowLegacyRenegotiation: config.AllowLegacyRenegotiation,
 	}
 
 	if p.ec2Port <= 0 {
@@ -473,6 +477,9 @@ func (p *EC2Provider) executeRemoteCheck(ctx context.Context, targetURL string, 
 
 	quotedTargetURL := strconv.Quote(targetURL)
 	remoteCommand := fmt.Sprintf("python3 %s %s --output_file %s", runnerPath, quotedTargetURL, remoteTempJSONPath)
+	if p.allowLegacyRenegotiation {
+		remoteCommand += " --legacy-renegotiation"
+	}
 	log.Printf("[EC2Provider]   Executing %s remote command: %s", logPrefix, remoteCommand)
 
 	session, err := sshClient.NewSession()

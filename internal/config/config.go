@@ -42,4 +42,7 @@ type Config struct {
 	EC2User           string `mapstructure:"ec2_user"`             // EC2 instance SSH username
 	EC2PrivateKeyPath string `mapstructure:"ec2_private_key_path"` // Path to the EC2 instance SSH private key
 	EC2Passphrase     string `mapstructure:"ec2_passphrase"`       // Passphrase for the EC2 instance SSH private key
+
+	// SSL / TLS toggles
+	LegacyRenegotiation bool `mapstructure:"legacy_renegotiation"` // Allow unsafe legacy TLS renegotiation in remote runner (off by default)
 }
