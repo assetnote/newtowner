@@ -34,17 +34,18 @@ const (
 )
 
 var (
-	providerFlag          *string
-	urlsFilePathFlag      *string
-	awsRegionFlag         *string
-	brightdataCountryFlag *string
-	updateDBFlag          *bool
-	awsAllRegionsFlag     *bool
-	sshHostFlag           *string
-	sshPortFlag           *int
-	sshUserFlag           *string
-	sshKeyPathFlag        *string
-	sshPassphraseFlag     *string
+	providerFlag            *string
+	urlsFilePathFlag        *string
+	awsRegionFlag           *string
+	brightdataCountryFlag   *string
+	updateDBFlag            *bool
+	awsAllRegionsFlag       *bool
+	sshHostFlag             *string
+	sshPortFlag             *int
+	sshUserFlag             *string
+	sshKeyPathFlag          *string
+	sshPassphraseFlag       *string
+	legacyRenegotiationFlag *bool
 	// EC2 flags
 	ec2HostFlag          *string
 	ec2PortFlag          *int
@@ -68,6 +69,7 @@ func init() {
 	sshUserFlag = pflag.String("ssh-user", "", "SSH user for the SSH provider")
 	sshKeyPathFlag = pflag.String("ssh-key-path", "", "Path to the SSH private key for the SSH provider")
 	sshPassphraseFlag = pflag.String("ssh-passphrase", "", "Passphrase for the SSH private key, if protected")
+	legacyRenegotiationFlag = pflag.Bool("legacy-renegotiation", false, "Allow unsafe legacy TLS renegotiation in the remote Python runner (use only when required)")
 	// EC2 flags
 	ec2HostFlag = pflag.String("ec2-host", "", "EC2 host for the EC2 provider")
 	ec2PortFlag = pflag.Int("ec2-port", 22, "EC2 port for the EC2 provider")
@@ -119,6 +121,7 @@ func init() {
 	viper.BindPFlag("ssh_user", pflag.Lookup("ssh-user"))
 	viper.BindPFlag("ssh_private_key_path", pflag.Lookup("ssh-key-path"))
 	viper.BindPFlag("ssh_passphrase", pflag.Lookup("ssh-passphrase"))
+	viper.BindPFlag("legacy_renegotiation", pflag.Lookup("legacy-renegotiation"))
 
 	// EC2 Provider Settings
 	viper.BindPFlag("ec2_host", pflag.Lookup("ec2-host"))
@@ -246,6 +249,7 @@ func main() {
 	log.Printf("  EC2 User: %s", cfg.EC2User)
 	log.Printf("  EC2 Key Path: %s", cfg.EC2PrivateKeyPath)
 	log.Printf("  EC2 Key Passphrase Provided: %t", cfg.EC2Passphrase != "")
+	log.Printf("  Legacy TLS renegotiation (remote runner): %t", cfg.LegacyRenegotiation)
 
 	selectedProvider := strings.ToLower(viper.GetString("provider"))
 	urlsFilePath := viper.GetString("urlsfile")
@@ -377,7 +381,7 @@ func main() {
 
 	case "ssh":
 		log.Println("Initializing SSH provider...")
-		sshProvider, err := ssh.NewProvider(ctx, cfg.SshHost, cfg.SshPort, cfg.SshUser, cfg.SshPrivateKeyPath, cfg.SshPassphrase)
+		sshProvider, err := ssh.NewProvider(ctx, cfg.SshHost, cfg.SshPort, cfg.SshUser, cfg.SshPrivateKeyPath, cfg.SshPassphrase, cfg.LegacyRenegotiation)
 		if err != nil {
 			log.Fatalf("Error initializing SSH provider: %v", err)
 		}
@@ -406,16 +410,17 @@ func main() {
 		log.Println("Initializing EC2 dual SSH provider...")
 
 		ec2Config := aws.EC2ProviderConfig{
-			EC2Host:       cfg.EC2Host,
-			EC2Port:       cfg.EC2Port,
-			EC2User:       cfg.EC2User,
-			EC2KeyPath:    cfg.EC2PrivateKeyPath,
-			EC2Passphrase: cfg.EC2Passphrase,
-			SshHost:       cfg.SshHost,
-			SshPort:       cfg.SshPort,
-			SshUser:       cfg.SshUser,
-			SshKeyPath:    cfg.SshPrivateKeyPath,
-			SshPassphrase: cfg.SshPassphrase,
+			EC2Host:                  cfg.EC2Host,
+			EC2Port:                  cfg.EC2Port,
+			EC2User:                  cfg.EC2User,
+			EC2KeyPath:               cfg.EC2PrivateKeyPath,
+			EC2Passphrase:            cfg.EC2Passphrase,
+			SshHost:                  cfg.SshHost,
+			SshPort:                  cfg.SshPort,
+			SshUser:                  cfg.SshUser,
+			SshKeyPath:               cfg.SshPrivateKeyPath,
+			SshPassphrase:            cfg.SshPassphrase,
+			AllowLegacyRenegotiation: cfg.LegacyRenegotiation,
 		}
 
 		ec2Provider, err := aws.NewEC2Provider(ctx, ec2Config)

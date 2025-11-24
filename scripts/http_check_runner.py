@@ -6,12 +6,58 @@ import requests
 import sys
 import ssl
 import urllib.parse
+import urllib.error
 import socket
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 import base64 # Ensure base64 is imported at the top level
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
 
-def make_request(target_url):
+
+def create_ssl_context(allow_legacy: bool) -> ssl.SSLContext:
+    """Create an SSL context with verification disabled; optionally allow legacy renegotiation."""
+    context = create_urllib3_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+
+    if allow_legacy:
+        context.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0)
+        # Always set the legacy renegotiation bit for older OpenSSL builds.
+        # https://github.com/urllib3/urllib3/issues/2653
+        context.options |= 0x4
+        no_reno_flag = getattr(ssl, "OP_NO_RENEGOTIATION", 0)
+        if no_reno_flag:
+            context.options &= ~no_reno_flag
+
+    return context
+
+
+class CustomHttpAdapter(HTTPAdapter):
+    """Transport adapter that injects our SSL context into urllib3."""
+
+    def __init__(self, ssl_context: ssl.SSLContext, *args, **kwargs):
+        self.ssl_context = ssl_context
+        super().__init__(*args, **kwargs)
+
+    def init_poolmanager(self, connections, maxsize, block=False, **pool_kwargs):
+        pool_kwargs["ssl_context"] = self.ssl_context
+        return super().init_poolmanager(connections, maxsize, block=block, **pool_kwargs)
+
+    def proxy_manager_for(self, proxy, **proxy_kwargs):
+        proxy_kwargs["ssl_context"] = self.ssl_context
+        return super().proxy_manager_for(proxy, **proxy_kwargs)
+
+
+def create_session(allow_legacy: bool):
+    """Build a requests session using the supplied SSL context."""
+    ssl_context = create_ssl_context(allow_legacy)
+    adapter = CustomHttpAdapter(ssl_context)
+    session = requests.Session()
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.verify = False
+    return session, ssl_context
+
+def make_request(target_url, allow_legacy_renegotiation=False):
     """Makes an HTTP GET request and returns details as a dictionary."""
     details = {
         "url": target_url,
@@ -26,6 +72,8 @@ def make_request(target_url):
         "ssl_certificate_error": None,
     }
 
+    session, ssl_context = create_session(allow_legacy_renegotiation)
+
     # Fetch SSL certificate
     parsed_url = None
     try:
@@ -38,12 +86,7 @@ def make_request(target_url):
             conn = None
             try:
                 sock = socket.create_connection((hostname, port), timeout=10)
-                # Create a context that does not verify certificates
-                context = ssl.create_default_context()
-                context.check_hostname = False
-                context.verify_mode = ssl.CERT_NONE
-                
-                conn = context.wrap_socket(sock, server_hostname=hostname)
+                conn = ssl_context.wrap_socket(sock, server_hostname=hostname)
                 
                 der_cert_bin = conn.getpeercert(True) # Get DER-encoded certificate
                 
@@ -91,7 +134,7 @@ def make_request(target_url):
     start_time = time.perf_counter()
 
     try:
-        response = requests.get(target_url, timeout=30, allow_redirects=True, verify=False)
+        response = session.get(target_url, timeout=30, allow_redirects=True)
         details["status_code"] = response.status_code
         
         # Ensure headers are map[string][]string for Go unmarshalling
@@ -134,6 +177,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Make an HTTP request and save results to JSON.")
     parser.add_argument("target_url", help="The URL to make the request to. Can be a single URL or comma-separated URLs.")
     parser.add_argument("--output_file", default="result.json", help="Path to save the JSON output.")
+    parser.add_argument("--legacy-renegotiation", action="store_true", help="Allow unsafe legacy TLS renegotiation (use only when necessary).")
     args = parser.parse_args()
 
     urls_to_check = [url.strip() for url in args.target_url.split(',') if url.strip()]
@@ -155,7 +199,7 @@ if __name__ == "__main__":
 
     for url_to_check_single in urls_to_check:
         print(f"Making request to: {url_to_check_single}", file=sys.stderr)
-        result_data = make_request(url_to_check_single)
+        result_data = make_request(url_to_check_single, allow_legacy_renegotiation=args.legacy_renegotiation)
         all_results.append(result_data)
 
     try:
