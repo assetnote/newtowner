@@ -1,6 +1,6 @@
 module newtowner
 
-go 1.23.0 // Or your desired Go version
+go 1.25.0 // Or your desired Go version
 
 require (
 	github.com/agnivade/levenshtein v1.2.1
@@ -15,8 +15,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	gitlab.com/gitlab-org/api/client-go v0.128.0
-	golang.org/x/crypto v0.38.0
-	golang.org/x/term v0.32.0
+	golang.org/x/crypto v0.52.0
+	golang.org/x/term v0.43.0
 )
 
 require (
@@ -64,8 +64,8 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
